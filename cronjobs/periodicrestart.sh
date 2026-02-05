@@ -17,7 +17,11 @@ readonly countdown_times=(
   0
 )
 
-readonly btrfs_volume=/btrfs/home
+readonly btrfs_volumes=(
+  /btrfs/@nv
+  /btrfs/@nv-servers
+  /btrfs/@nv-servers-survival
+)
 
 readonly scriptpath="$(realpath "${0}")"
 readonly scriptdir="$(dirname "${scriptpath}")"
@@ -65,7 +69,7 @@ check_server_running() {
 }
 
 handle_backup() {
-  local -r offset_days='2'
+  local -r offset_days='5'
   local -r check_back_days='7'
   local -r date_args=(
     --utc
@@ -75,22 +79,25 @@ handle_backup() {
     echo "BTRFS command is missing - skipping backup"
     return
   fi
-  if ! [ -e "${btrfs_volume}" ]; then
-    echo "BTRFS volume is missing - failing"
-    return 1
-  fi
   local today
   today="$(date "${date_args[@]}")"
-  sudo btrfs subvolume snapshot "${btrfs_volume}" "${btrfs_volume}_restart_${today}"
-  local offset delete_day delete_date delete_path
-  for (( offset=0; offset < "${check_back_days}"; ++offset )); do
-    delete_day="$(( offset_days + offset ))"
-    delete_date="$(date -d "${delete_day} days ago" "${date_args[@]}")"
-    delete_path="${btrfs_volume}_restart_${delete_date}"
-    if [ -e "${delete_path}" ]; then
-      echo "Deleting ${delete_path}"
-      sudo btrfs subvolume delete "${delete_path}"
+  for btrfs_volume in "${btrfs_volumes[@]}"; do
+    if ! [ -e "${btrfs_volume}" ]; then
+      echo "BTRFS volume is missing - failing"
+      return 1
     fi
+    echo "BTRFS backing up ${btrfs_volume}"
+    sudo btrfs subvolume snapshot "${btrfs_volume}" "${btrfs_volume}_restart_${today}"
+    local offset delete_day delete_date delete_path
+    for (( offset=0; offset < "${check_back_days}"; ++offset )); do
+      delete_day="$(( offset_days + offset ))"
+      delete_date="$(date -d "${delete_day} days ago" "${date_args[@]}")"
+      delete_path="${btrfs_volume}_restart_${delete_date}"
+      if [ -e "${delete_path}" ]; then
+        echo "Deleting ${delete_path}"
+        sudo btrfs subvolume delete "${delete_path}"
+      fi
+    done
   done
 }
 

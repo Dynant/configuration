@@ -7,7 +7,7 @@
 http://{$DOMAIN} {
 	handle_path /node_metrics {
 		rewrite * /metrics
-		reverse_proxy http://docker_host:9100
+		reverse_proxy http://hostnet.internal:9100
 	}
 	@servermetrics path_regexp serverre ^/server_metrics/([^.:/]+)$
 	handle @servermetrics {

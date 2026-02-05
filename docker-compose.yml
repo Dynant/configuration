@@ -5,7 +5,7 @@ x-shared-envs:
   TRACE: "true" # entrypoint
 x-user:
   &user
-  user: '1000:1000'
+  user: '988:988'
 x-mc-common-settings:
   &mc_common_settings
   stop_grace_period: 12m
@@ -119,6 +119,7 @@ services:
       MARIADB_PRISM_PASSWORD: "${MARIADB_PRISM_PASSWORD?}"
     volumes:
       - './database-init/:/docker-entrypoint-initdb.d/:ro'
+      - 'mariadb:/var/lib/mysql'
 
   website:
     <<: *user
@@ -141,9 +142,10 @@ services:
     environment:
       DOMAIN: "${DOMAIN?}"
       DISCORD_INVITE_LINK: "${DISCORDSRV_INVITE_LINK?}"
+    extra_hosts: ["hostnet.internal:host-gateway"]
   # MONITORING
   node_exporter:
-    image: prom/node-exporter:v1.1.2
+    image: prom/node-exporter:v1.10.2
     restart: unless-stopped
     container_name: node_exporter
     command:
@@ -157,7 +159,6 @@ services:
     volumes:
       - '/:/host:ro,rslave'
       - /run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket:ro # Systemd collector
-  docker_host: # For node_exporter
-    image: qoomon/docker-host:2.5.5
-    restart: unless-stopped
-    cap_add: [ 'NET_ADMIN', 'NET_RAW' ]
+
+volumes:
+  mariadb:

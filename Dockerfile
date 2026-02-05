@@ -33,7 +33,7 @@ RUN --mount=type=bind,source=docker,target=/docker <<APT
   rm -rf /var/lib/apt/lists/*
 APT
 
-RUN useradd --create-home --uid 1000 runner
+RUN useradd --create-home --uid 988 runner
 
 COPY --link docker/known_hosts docker/config_repo_ro_key /home/runner/.ssh/
 
